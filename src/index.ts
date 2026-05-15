@@ -1,26 +1,30 @@
 import express from "express";
 import dotenv from "dotenv";
+import twilio from "twilio";
 
 dotenv.config();
 const app = express();
 const port = "3000";
 
-const API_KEY = process.env.API_KEY;
-const FARGO_LATITUDE = process.env.FARGO_LATITUDE;
-const FARGO_LONGITUDE = process.env.FARGO_LONGITUDE;
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-// const getWeatherData = async () => {
-//     const data = await fetch(
-//         `https://api.openweathermap.org/data/3.0/onecall?lat=${FARGO_LATITUDE}&lon=${FARGO_LONGITUDE}&appid=${API_KEY}`,
-//     );
-//     return data;
-// };
+const API_KEY = process.env.API_KEY;
 
 app.get("/", async (req, res) => {
-    const data = await fetch(
-        `https://api.openweathermap.org/data/3.0/onecall?lat=${FARGO_LATITUDE}&lon=${FARGO_LONGITUDE}&appid=${API_KEY}`,
-    ).then((response) => response.json());
-    res.send(data);
+    const response = await fetch(`http://api.weatherapi.com/v1/current.json?q=58104&lang=en`, {
+        headers: { key: API_KEY as string },
+    });
+    const data = await response.json();
+
+    console.log(`The current temperature in Fargo is ${data.current.temp_f}°F and ${data.current.condition.text}`);
+
+    // await twilioClient.messages.create({
+    //     body: `The current temperature in Fargo is ${data.current.temp_f}°F and ${data.current.condition.text}`,
+    //     from: process.env.TWILIO_PHONE_NUMBER as string,
+    //     to: process.env.PERSONAL_PHONE_NUMBER as string,
+    // });
+
+    res.send("Message sent!");
 });
 
 app.listen(port, () => {
