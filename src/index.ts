@@ -1,30 +1,33 @@
 import express from "express";
 import dotenv from "dotenv";
-import twilio from "twilio";
 
 dotenv.config();
 const app = express();
 const port = "3000";
 
-const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-
 const API_KEY = process.env.API_KEY;
+const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1505287988425392249/y4dOOC6QpuRh48aepbJKDp2gNyYv909B8gDnbRVxj8Bsd7GMrtJsmYdyd0fyQoAMIfzv';
 
-app.get("/", async (req, res) => {
-    const response = await fetch(`http://api.weatherapi.com/v1/current.json?q=58104&lang=en`, {
+app.post("/", async (req, res) => {
+    const raw_data = await fetch(`http://api.weatherapi.com/v1/current.json?q=58104&lang=en`, {
+        method: "GET",
         headers: { key: API_KEY as string },
     });
-    const data = await response.json();
+    const weather_data = await raw_data.json();
 
-    console.log(`The current temperature in Fargo is ${data.current.temp_f}°F and ${data.current.condition.text}`);
+    console.log(
+        `The current temperature in Fargo is ${weather_data.current.temp_f}°F and ${weather_data.current.condition.text}`,
+    );
 
-    // await twilioClient.messages.create({
-    //     body: `The current temperature in Fargo is ${data.current.temp_f}°F and ${data.current.condition.text}`,
-    //     from: process.env.TWILIO_PHONE_NUMBER as string,
-    //     to: process.env.PERSONAL_PHONE_NUMBER as string,
-    // });
+    await fetch(DISCORD_WEBHOOK_URL as string, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            content: `The current temperature in Fargo is ${weather_data.current.temp_f}°F and ${weather_data.current.condition.text}`,
+        }),
+    });
 
-    res.send("Message sent!");
+    res.send("Data posted successfully!");
 });
 
 app.listen(port, () => {
